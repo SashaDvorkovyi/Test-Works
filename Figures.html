@@ -1,0 +1,431 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>sale batton</title>
+    <script>
+        window.onload = function () {
+            let points = new Array();
+            let btnClick = false;
+            let conteiner = document.getElementById('conteiner');
+            let counterPoints = 0;
+            let carentPoint = null;
+            let infoDivIsActive = false;
+            let figuresConteiner;
+            let listener = function (event) {
+                if (!btnClick) {
+                    let startX = event.clientX,
+                        startY = event.clientY;
+                    let point = new Point(counterPoints++, startX, startY)
+                    conteiner.appendChild(point.GetElement());
+                    points.push(point);
+                    if (points.length == 3) {
+                        figuresConteiner = new FifuresConteiner(points[0], points[1], points[2])
+                        conteiner.appendChild(figuresConteiner.GetParallelogram());
+                        conteiner.appendChild(figuresConteiner.GetCircle());
+                        conteiner.removeEventListener('click', listener, false);
+
+                        for (let i = 0; i < points.length; i++) {
+                            let a = points[i];
+                            points[i].GetElement().addEventListener('mousedown', targetPoint);
+                            conteiner.addEventListener('mouseup', canselTranslatePoint);
+                        }
+                    }
+                    setCoordinats();
+                }
+                else {
+                    btnClick = false;
+                }
+            };
+            let targetPoint = function (e) {
+                if (carentPoint == null) {
+                    for (let i = 0; i < points.length; i++) {
+                        if (e.target.id == points[i].GetElement().id)
+                            carentPoint = points[i];
+                    }
+                    conteiner.addEventListener('mousemove', translatePoint, false);
+                }
+            }
+            let translatePoint = function (e) {
+                carentPoint.MoovePoint(e.pageX, e.pageY)
+                figuresConteiner.Moove(points[0], points[1], points[2]);
+                conteiner.appendChild(figuresConteiner.GetParallelogram());
+                conteiner.appendChild(figuresConteiner.GetCircle());
+            }
+            let canselTranslatePoint = function () {
+                carentPoint = null;
+                conteiner.removeEventListener('mousemove', translatePoint);
+            }
+
+
+
+            let resetFunction = function () {
+                for (let i = 0; i < points.length; i++) {
+                    points[i].GetElement().remove();
+                }
+                points = new Array();
+                if (figuresConteiner) {
+                    if (figuresConteiner.GetParallelogram())
+                        figuresConteiner.GetParallelogram().remove();
+                    if (figuresConteiner.GetCircle())
+                        figuresConteiner.GetCircle().remove();
+                    figuresConteiner = null;
+                }
+                btnClick = true;
+                conteiner.addEventListener('click', listener, false);
+                setCoordinats();
+            }
+
+            let infoFunction = function () {
+                btnClick = true;
+                let infoDiv = document.getElementById('info');
+                if (!infoDivIsActive) {
+                    infoDiv.className = 'infoActiv';
+                    infoDivIsActive = true;
+                }
+                else {
+                    infoDiv.className = 'infoDeActiv';
+                    infoDivIsActive = false;
+                }
+            }
+            let resultsContainer = document.getElementById('results');
+
+            let setCoordinats = function () {
+                resultsContainer.style.display = 'block';
+                let strResult = "";
+                for (let i = 0; i < points.length; i++) {
+                    strResult += "Point" + i + " X=" + points[i].X.toFixed(1) + ", Y=" + points[i].Y.toFixed(1) + ";<br />";
+                }
+                if (figuresConteiner) {
+                    strResult += "Parallelogram square: " + (figuresConteiner.Height * figuresConteiner.Width).toFixed(1) + ";<br />"
+                    strResult += "Circle square: " + (Math.pow(figuresConteiner.DiameterCircle, 2) * Math.PI / 4).toFixed(1) + ";<br />"
+                }
+                resultsContainer.innerHTML = strResult;
+                if (strResult == "") {
+                    resultsContainer.style.display = 'none';
+                }
+            }
+
+            let btnAbout = document.getElementById('about');
+
+            btnAbout.addEventListener('click', infoFunction, false);
+
+            let btnReset = document.getElementById('reset');
+
+            btnReset.addEventListener('click', resetFunction, false);
+
+            conteiner.addEventListener('click', listener, false);
+
+
+            function Point(counter, ordinateX, ordinateY) {
+                if (ordinateX < 235) {
+                    ordinateX = 235;
+                }
+                this.X = ordinateX;
+                this.Y = ordinateY;
+                this.NameTag = "div";
+                let Element = document.createElement("div");
+                Element.id = counter;
+                Element.className = "point";
+                let hightAndWidth = 11;
+                Element.style.height = hightAndWidth + "px";
+                Element.style.width = hightAndWidth + "px";
+                Element.style.left = (ordinateX - hightAndWidth / 2) + "px";
+                Element.style.top = (ordinateY - hightAndWidth / 2) + "px";
+                this.element = Element;
+                this.GetElement = function () { return this.element; }
+                this.MoovePoint = function (ordinateX, ordinateY) {
+                    if (ordinateX < 235) {
+                        ordinateX = 235;
+                    }
+                    this.X = ordinateX;
+                    this.Y = ordinateY;
+                    this.element.style.left = (ordinateX - hightAndWidth / 2) + "px";
+                    this.element.style.top = (ordinateY - hightAndWidth / 2) + "px";
+                    setCoordinats();
+                }
+            }
+
+            function FifuresConteiner(point1, point2, point3) {
+
+                this.Point1 = point1;
+                this.Point2 = point2;
+                this.Point3 = point3;
+
+                function Calculate(that) {
+                    that.Center = { X: point2.X + (point3.X - point2.X) / 2, Y: point2.Y + (point3.Y - point2.Y) / 2 };
+                    that.Width = Math.sqrt(Math.pow(point2.X - point1.X, 2) + Math.pow(point2.Y - point1.Y, 2));
+
+                    let hipotenuza = Math.sqrt(Math.pow(point3.X - point1.X, 2) + Math.pow(point3.Y - point1.Y, 2));
+                    let vactor2_1 = { X: point2.X - point1.X, Y: point2.Y - point1.Y };
+                    let vactor3_1 = { X: point3.X - point1.X, Y: point3.Y - point1.Y };
+                    let clockwise = vactor2_1.X * vactor3_1.Y - vactor2_1.Y * vactor3_1.X;
+                    let signVactor;
+                    if (clockwise > 0)
+                        signVactor = -1;
+                    else
+                        signVactor = +1;
+
+                    let skalarSum = vactor2_1.X * vactor3_1.X + vactor2_1.Y * vactor3_1.Y;
+                    let modulSum = Math.sqrt(vactor2_1.X * vactor2_1.X + vactor2_1.Y * vactor2_1.Y) * Math.sqrt(vactor3_1.X * vactor3_1.X + vactor3_1.Y * vactor3_1.Y);
+                    let cos1_2_3 = skalarSum / modulSum;
+
+                    that.Angle1_2_3 = Math.acos(cos1_2_3);
+                    that.Angle = signVactor * Math.acos(cos1_2_3) * (180 / Math.PI);
+                    that.Height = hipotenuza * Math.sin(that.Angle1_2_3);
+
+                    that.DiameterCircle = Math.sqrt(4 * that.Height * that.Width / Math.PI);
+
+                    let vactorB = { X: 100, Y: 0 };
+                    let clockwise2 = vactor2_1.X * vactorB.Y - vactor2_1.Y * vactorB.X;
+                    let signVactor2;
+                    if (clockwise2 > 0)
+                        signVactor2 = -1;
+                    else
+                        signVactor2 = +1;
+                    let skalarSum2 = vactor2_1.X * vactorB.X + vactor2_1.Y * vactorB.Y;
+                    let modulSum2 = Math.sqrt(vactor2_1.X * vactor2_1.X + vactor2_1.Y * vactor2_1.Y) * Math.sqrt(vactorB.X * vactorB.X + vactorB.Y * vactorB.Y);
+                    let cos1_2_3ToOrdinate = skalarSum2 / modulSum2;
+
+                    that.Angle1_2_3Rotate = Math.acos(cos1_2_3ToOrdinate);
+                    that.AngleRotate = signVactor2 * Math.acos(cos1_2_3ToOrdinate) * (180 / Math.PI);
+
+                }
+                Calculate(this);
+
+
+                let Element = document.createElement("div");
+                Element.className = "par";
+                Element.style.left = (this.Center.X - this.Width / 2) + "px";
+                Element.style.top = (this.Center.Y - this.Height / 2) + "px";
+                Element.style.height = this.Height + "px";
+                Element.style.width = this.Width + "px";
+                Element.style.transform = "rotate(" + (this.AngleRotate) + "deg) skew(" + (this.Angle - 90) + "deg)";
+
+                this.Parallelogram = Element;
+                this.GetParallelogram = function () { return this.Parallelogram; }
+
+                let circle = document.createElement("div");
+                circle.className = "circle";
+                circle.style.left = (this.Center.X - this.DiameterCircle / 2) + "px";
+                circle.style.top = (this.Center.Y - this.DiameterCircle / 2) + "px";
+                circle.style.height = this.DiameterCircle + "px";
+                circle.style.width = this.DiameterCircle + "px";
+
+                this.Circle = circle;
+                this.GetCircle = function () { return this.Circle; }
+
+                this.Moove = (point1, point2, point3) => {
+                    this.Point1 = point1;
+                    this.Point2 = point2;
+                    this.Point3 = point3;
+
+                    Calculate(this);
+
+                    this.Parallelogram.remove()
+                    this.Circle.remove()
+
+                    let Element = document.createElement("div");
+                    Element.className = "par";
+                    Element.style.left = (this.Center.X - this.Width / 2) + "px";
+                    Element.style.top = (this.Center.Y - this.Height / 2) + "px";
+                    Element.style.height = this.Height + "px";
+                    Element.style.width = this.Width + "px";
+                    Element.style.transform = "rotate(" + (this.AngleRotate) + "deg) skew(" + (this.Angle - 90) + "deg)";
+
+                    this.Parallelogram = Element;
+
+                    let circle = document.createElement("div");
+                    circle.className = "circle";
+                    circle.style.left = (this.Center.X - this.DiameterCircle / 2) + "px";
+                    circle.style.top = (this.Center.Y - this.DiameterCircle / 2) + "px";
+                    circle.style.height = this.DiameterCircle + "px";
+                    circle.style.width = this.DiameterCircle + "px";
+
+                    this.Circle = circle;
+                    setCoordinats();
+                }
+            }
+        }
+    </script>
+    <style>
+        .point {
+            background-color: red;
+            position: absolute;
+            border-radius: 50%;
+        }
+
+        h2 {
+            color: deepskyblue;
+        }
+
+        #conteiner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .par {
+            position: absolute;
+            border: 2px solid blue;
+            z-index: -1;
+        }
+
+        .circle {
+            position: absolute;
+            border: 2px solid yellow;
+            border-radius: 50%;
+            z-index: -2;
+        }
+
+        .RecetBTN {
+            border-radius: 5px;
+            margin: 5px 5px 5px 20px;
+            z-index: 1;
+            width: 80px;
+            height: 30px;
+            background-color: papayawhip;
+        }
+
+            .RecetBTN:hover {
+                background-color: peachpuff;
+            }
+
+            .RecetBTN:active {
+                background-color: papayawhip;
+            }
+
+        .AboutBTN {
+            border-radius: 5px;
+            margin: 5px 5px 5px 5px;
+            z-index: 1;
+            width: 80px;
+            height: 30px;
+            background-color: rgb(112, 237, 40);
+        }
+
+            .AboutBTN:hover {
+                background-color: rgb(100, 209, 38);
+            }
+
+            .AboutBTN:active {
+                background-color: rgb(112, 237, 40);
+            }
+
+        .infoActiv {
+            overflow: hidden;
+            z-index: 1;
+            margin: 1px;
+            width: 10px;
+            height: 10px;
+            border: 5px ridge rgb(62, 136, 189);
+            border-radius: 15px;
+            background-color: rgba(86, 218, 245, 0.5);
+            animation: active 1.2s forwards;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        @keyframes active {
+            0% {
+                width: 0px;
+                height: 10px;
+            }
+
+            50% {
+                width: 220px;
+                height: 10px;
+            }
+
+            100% {
+                width: 220px;
+                height: 450px;
+            }
+        }
+
+        .infoDeActiv {
+            overflow: hidden;
+            z-index: 1;
+            margin: 1px;
+            width: 220px;
+            height: 450px;
+            border: 5px ridge rgb(62, 136, 189);
+            border-radius: 15px;
+            background-color: rgba(86, 218, 245, 0.5);
+            animation: deActive 0.5s forwards;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        @keyframes deActive {
+            0% {
+                width: 220px;
+                height: 450px;
+            }
+
+            50% {
+                width: 220px;
+                height: 10px;
+            }
+
+            100% {
+                width: 0px;
+                height: 10px;
+                visibility: hidden;
+            }
+        }
+
+        .info {
+            display: none;
+        }
+
+        .results {
+            display: none;
+            position: absolute;
+            right: 5px;
+            top: 5px;
+            min-width: 190px;
+            min-height: 20px;
+            border: 1px solid orange;
+            padding: 5px;
+            font-size: 15px;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="conteiner">
+
+        <input type="button" id="reset" value="Recet" class="RecetBTN" />
+        <input type="button" id="about" value="About" class="AboutBTN" />
+        <div id="info" class="info">
+            <div>
+                <p><strong>Using the program:</strong></p>
+                <p>
+                    Set three points somewhere to draw a parallelogram with a circle.<br />
+                    Also, you can drag these points by clicking on them and not releasing the mouse buttons while moving the cursor. This will cause the parallelogram and circle to change as well.
+                </p>
+                <br />
+                <p><strong>This program was written by:</strong></p>
+                <p>Dvorkoviy Oleksandr</p>
+                <p>tel: 0938777633</p>
+                <p>mail: sasha3489@ukr.net</p>
+            </div>
+        </div>
+        <div id="results" class="results">
+        </div>
+    </div>
+</body>
+</html>
